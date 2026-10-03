@@ -1,0 +1,42 @@
+[
+  {
+    "doc_id": "helsinki_2013",
+    "title": "Declaration of Helsinki",
+    "publisher": "World Medical Association",
+    "version": "2013",
+    "authority": 2,
+    "file": "data/raw/helsinki_2013.pdf",
+    "url": "https://www.wma.net/wp-content/uploads/2016/11/DoH-Oct2013-JAMA.pdf",
+    "topic_areas": ["consent", "data_handling"]
+  },
+  {
+    "doc_id": "icmje_2023",
+    "title": "ICMJE Recommendations for the Conduct, Reporting, Editing, and Publication of Scholarly Work in Medical Journals",
+    "publisher": "International Committee of Medical Journal Editors",
+    "version": "2023",
+    "authority": 3,
+    "file": "data/raw/icmje_2023.pdf",
+    "url": "https://www.icmje.org/icmje-recommendations.pdf",
+    "topic_areas": ["authorship", "publication_ethics"]
+  },
+  {
+    "doc_id": "cope_guidelines",
+    "title": "COPE Core Practices",
+    "publisher": "Committee on Publication Ethics",
+    "version": "2017",
+    "authority": 3,
+    "file": "data/raw/cope_guidelines.pdf",
+    "url": "https://publicationethics.org/files/cope-core-practices.pdf",
+    "topic_areas": ["publication_ethics", "authorship"]
+  },
+  {
+    "doc_id": "icmr_2017",
+    "title": "National Ethical Guidelines for Biomedical and Health Research Involving Human Participants",
+    "publisher": "Indian Council of Medical Research",
+    "version": "2017",
+    "authority": 2,
+    "file": "data/raw/icmr_2017.pdf",
+    "url": "https://main.icmr.nic.in/sites/default/files/guidelines/ICMR_Ethical_Guidelines_2017.pdf",
+    "topic_areas": ["consent", "data_handling"]
+  }
+]

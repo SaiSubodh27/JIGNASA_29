@@ -1,0 +1,10 @@
+groq
+python-dotenv
+pypdf
+rank_bm25
+scikit-learn
+faiss-cpu
+streamlit
+numpy
+requests
+fpdf2
