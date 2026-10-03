@@ -1,7 +1,7 @@
 import json
 
 def generate_reference_extraction(references_text: str) -> list:
-    sys_prompt = "Extract up to 10 individual citation strings from the following references section. Return ONLY a JSON list of strings (e.g. [\"citation 1\", \"citation 2\"]). Do not add markdown blocks."
+    sys_prompt = "Extract ALL individual citation strings from the following references section. Return ONLY a JSON list of strings (e.g. [\"citation 1\", \"citation 2\"]). Do not add markdown blocks or limits."
     try:
         from src.generate import client, FALLBACK_MODEL
         response = client.chat.completions.create(

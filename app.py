@@ -271,63 +271,58 @@ with tab2:
             if not ref_text:
                 st.error("Could not find a 'References' section in this document.")
             else:
-                with st.spinner("Extracting top citations via LLM..."):
+                with st.spinner("Extracting ALL citations via LLM..."):
                     import sys
                     if 'src' not in sys.path:
                         sys.path.insert(0, 'src')
-                    from src.auto_reference import generate_reference_extraction, fetch_paper_info
-                    from pipeline import run_audit_pipeline
+                    from src.auto_reference import generate_reference_extraction, fetch_paper_info, generate_reference_audit
                     citations = generate_reference_extraction(ref_text)
                     
                 if not citations:
                     st.warning("No specific citations could be parsed.")
                 else:
                     st.success(f"Found {len(citations)} citations. Running global audit...")
+                    
+                    results = []
+                    progress_bar = st.progress(0)
+                    
                     for i, cite in enumerate(citations):
-                        st.markdown("---")
-                        st.markdown(f"### Reference {i+1}: `{cite}`")
+                        progress_bar.progress((i + 1) / len(citations))
                         
-                        with st.spinner("Querying OpenAlex global database..."):
-                            paper_data = fetch_paper_info(cite)
-                        
+                        paper_data = fetch_paper_info(cite)
                         if not paper_data:
-                            st.error("❌ Could not resolve this paper globally.")
+                            results.append({
+                                "Citation": cite[:100] + "...",
+                                "Resolved Title": "Not Found",
+                                "Access": "❌ N/A",
+                                "Audit Analysis": "Could not resolve globally."
+                            })
                             continue
                             
-                        if paper_data['is_oa']:
-                            st.markdown(f"**📄 Title:** {paper_data['title']} (🟢 OPEN ACCESS)")
-                        else:
-                            st.markdown(f"**📄 Title:** {paper_data['title']} (🔒 PAYWALLED - Using Abstract)")
-                            
-                        with st.spinner("Running Ethics & Citation Audit..."):
-                            # We pass the fetched abstract as the base_paper_text
-                            audit_result = run_audit_pipeline(paper_input, base_paper_text=paper_data['abstract'], top_k=top_k, retrieval_mode=retrieval_mode)
-                            
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.success("✅ Compliant Areas")
-                                if audit_result.get("compliant"):
-                                    for item in audit_result["compliant"]:
-                                        st.markdown(f"- {item}")
-                                else:
-                                    st.write("None identified.")
-                            with col2:
-                                st.error("🚨 Potential Red Flags")
-                                if audit_result.get("red_flags"):
-                                    for item in audit_result["red_flags"]:
-                                        st.markdown(f"- {item}")
-                                else:
-                                    st.write("No direct violations found.")
-                                    
-                            st.warning("⚠️ Missing Information")
-                            if audit_result.get("missing_info"):
-                                for item in audit_result["missing_info"]:
-                                    st.markdown(f"- {item}")
-                            else:
-                                st.write("None identified.")
-                            
-                            st.info(f"**Disclaimer:** {audit_result.get('disclaimer', 'This is an automated audit.')}")
-
+                        access_str = "🟢 OA" if paper_data['is_oa'] else "🔒 Paywalled"
+                        
+                        audit_summary = generate_reference_audit(paper_input, paper_data['title'], paper_data['abstract'])
+                        
+                        results.append({
+                            "Citation": cite[:100] + "..." if len(cite) > 100 else cite,
+                            "Resolved Title": paper_data['title'],
+                            "Access": access_str,
+                            "Audit Analysis": audit_summary
+                        })
+                    
+                    st.markdown("### 📊 Final Audit Results")
+                    st.dataframe(results, use_container_width=True)
+                    
+                    # Also allow downloading as CSV
+                    import pandas as pd
+                    df = pd.DataFrame(results)
+                    csv = df.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Download Results CSV",
+                        data=csv,
+                        file_name='ethics_audit_results.csv',
+                        mime='text/csv',
+                    )
         st.markdown("---")
         st.markdown("#### 💬 Ask the Auditor")
         followup_q = st.text_input("Follow-up question about your paper:", placeholder="e.g., Did I properly cite the dataset?")
