@@ -178,11 +178,12 @@ Your job is to cross-reference the user's paper against the official rules and o
 
 Rules:
 1. ONLY use the provided SOURCES. Do not use outside knowledge.
-2. Identify areas where the paper aligns with the rules (Compliant).
-3. Identify areas where the paper violates or risks violating the rules (Red Flags).
-4. Identify missing ethical information (Missing Info).
-5. Always cite the source number in brackets, e.g. [1].
-6. You cannot officially approve or reject a study. Add a disclaimer.
+2. Even if the papers are from a non-medical field (like Computer Science), you MUST evaluate them against general publication ethics (plagiarism, citation requirements, authorship) found in the guidelines.
+3. Identify areas where the paper aligns with the rules (Compliant).
+4. Identify areas where the paper violates or risks violating the rules (Red Flags).
+5. Identify missing ethical information (Missing Info).
+6. Always cite the source number in brackets, e.g. [1].
+7. You cannot officially approve or reject a study. Add a disclaimer.
 
 Output JSON format:
 {
@@ -231,9 +232,10 @@ def generate_audit_chat(question: str, paper_text: str, base_paper_text: str, ch
     sys_prompt = (
         "You are a Research Ethics Auditor answering a follow-up question.\n"
         "1. Apply the principles from the OFFICIAL GUIDELINES to the specific situation described in the MAIN PAPER and BASE PAPER.\n"
-        "2. It is completely OK if the guidelines do not explicitly mention the user's specific dataset or algorithm names. You MUST apply the general rules (like plagiarism, consent, or citation) to their specific scenario.\n"
-        "3. Cite the guidelines using [1].\n"
-        "4. Only say NOT_FOUND if the guidelines are entirely irrelevant to the core ethical question."
+        "2. Even if the papers are from a non-medical field (like Computer Science or Physics), you MUST still evaluate them against general publication ethics (plagiarism, citation requirements, intellectual property, authorship) found in the guidelines (like COPE or ICMJE).\n"
+        "3. Do not reject the query just because the papers don't involve human participants or biology. Apply general academic integrity rules.\n"
+        "4. Cite the guidelines using [1].\n"
+        "5. Only say NOT_FOUND if the guidelines are entirely irrelevant to the core ethical question."
     )
     
     user_msg = f"MAIN PAPER:\n{safe_paper}\n\nBASE PAPER:\n{safe_base}\n\nOFFICIAL GUIDELINES:\n{sources_text}\n\nUSER QUESTION:\n{question}"
