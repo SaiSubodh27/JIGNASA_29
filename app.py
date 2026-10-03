@@ -246,9 +246,9 @@ with tab2:
     
     col_up1, col_up2 = st.columns(2)
     with col_up1:
-        main_file = st.file_uploader("Upload MAIN Paper (Your study)", type=["pdf"])
+        main_file = st.file_uploader("Upload MAIN Paper (Your study)", type=["pdf", "docx", "doc"])
     with col_up2:
-        base_file = st.file_uploader("Upload BASE Paper (Reference study)", type=["pdf"])
+        base_file = st.file_uploader("Upload BASE Paper (Reference study)", type=["pdf", "docx", "doc"])
         
     paper_input = ""
     base_input = ""
@@ -257,7 +257,7 @@ with tab2:
     
     if main_file:
         if "main_sections" not in st.session_state or st.session_state.get("last_main") != main_file.name:
-            st.session_state["main_sections"] = parse_scientific_paper(main_file.read())
+            st.session_state["main_sections"] = parse_scientific_paper(main_file.read(), main_file.name)
             st.session_state["last_main"] = main_file.name
             
         main_sec = st.session_state["main_sections"]
@@ -268,7 +268,7 @@ with tab2:
             
     if base_file:
         if "base_sections" not in st.session_state or st.session_state.get("last_base") != base_file.name:
-            st.session_state["base_sections"] = parse_scientific_paper(base_file.read())
+            st.session_state["base_sections"] = parse_scientific_paper(base_file.read(), base_file.name)
             st.session_state["last_base"] = base_file.name
             
         base_sec = st.session_state["base_sections"]
@@ -345,11 +345,11 @@ with tab3:
     st.markdown("### 🔗 Auto-Reference Audit Engine (OpenAlex API)")
     st.markdown("Automatically extract references from your paper, resolve them globally, and check how accurately you cited them.")
     
-    main_file_auto = st.file_uploader("Upload MAIN Paper (PDF)", type=["pdf"], key="auto_ref")
+    main_file_auto = st.file_uploader("Upload MAIN Paper (PDF/DOCX)", type=["pdf", "docx", "doc"], key="auto_ref")
     if main_file_auto and st.button("Run Auto-Reference Audit"):
         with st.spinner("Parsing PDF..."):
             from src.user_parser import parse_scientific_paper
-            sections = parse_scientific_paper(main_file_auto.read())
+            sections = parse_scientific_paper(main_file_auto.read(), main_file_auto.name)
             
             # Find references
             ref_text = ""

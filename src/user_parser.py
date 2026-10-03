@@ -1,13 +1,20 @@
 import re
 from pypdf import PdfReader
 import io
+import docx
 
-def parse_scientific_paper(file_bytes):
-    reader = PdfReader(io.BytesIO(file_bytes))
+def parse_scientific_paper(file_bytes, filename=""):
     text = ""
-    for p in reader.pages:
-        text += (p.extract_text() or "") + "\n"
-        
+    
+    if filename.lower().endswith(".docx") or filename.lower().endswith(".doc"):
+        doc = docx.Document(io.BytesIO(file_bytes))
+        text = "\n".join([para.text for para in doc.paragraphs])
+    else:
+        # Default to PDF
+        reader = PdfReader(io.BytesIO(file_bytes))
+        for p in reader.pages:
+            text += (p.extract_text() or "") + "\n"
+            
     text = text.replace('\r', '\n')
     
     headings = [

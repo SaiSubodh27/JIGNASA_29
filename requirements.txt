@@ -8,3 +8,4 @@ streamlit
 numpy
 requests
 fpdf2
+python-docx
