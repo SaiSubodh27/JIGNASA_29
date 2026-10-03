@@ -327,3 +327,13 @@ with tab2:
                                 st.write("None identified.")
                             
                             st.info(f"**Disclaimer:** {audit_result.get('disclaimer', 'This is an automated audit.')}")
+
+        st.markdown("---")
+        st.markdown("#### 💬 Ask the Auditor")
+        followup_q = st.text_input("Follow-up question about your paper:", placeholder="e.g., Did I properly cite the dataset?")
+        ask_btn = st.button("Ask Question", type="secondary")
+        if ask_btn and followup_q.strip():
+            with st.spinner("Consulting the ethics guidelines..."):
+                from pipeline import run_audit_chat
+                answer = run_audit_chat(followup_q, paper_input, base_paper_text="", top_k=top_k, retrieval_mode=retrieval_mode)
+                st.info(answer)
