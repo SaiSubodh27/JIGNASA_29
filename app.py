@@ -311,7 +311,7 @@ with tab2:
                         })
                     
                     st.markdown("### 📊 Final Audit Results")
-                    st.dataframe(results, use_container_width=True)
+                    st.table(results)
                     
                     # Also allow downloading as CSV
                     import pandas as pd
