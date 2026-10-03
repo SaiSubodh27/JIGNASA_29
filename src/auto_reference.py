@@ -2,35 +2,42 @@ import json
 import re
 
 def generate_reference_extraction(references_text: str) -> list:
-    sys_prompt = "Extract ALL individual citation strings from the following references section. Return ONLY a JSON list of strings (e.g. [\"citation 1\", \"citation 2\"]). Do not add markdown blocks or limits."
+    sys_prompt = "Extract up to 25 individual citation strings from the following references section. Return ONLY a JSON list of strings (e.g. [\"citation 1\", \"citation 2\"]). Output absolutely nothing else."
     try:
         from src.generate import client, FALLBACK_MODEL
         response = client.chat.completions.create(
             model=FALLBACK_MODEL,
             messages=[
                 {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": references_text[:6000]} # increased input context
+                {"role": "user", "content": references_text[:6000]}
             ],
             temperature=0.0
         )
         content = response.choices[0].message.content.strip()
         
-        # Robust JSON extraction
+        # 1. Try strict JSON parse
         match = re.search(r'\[.*\]', content, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group(0))
-            except json.JSONDecodeError:
-                # Attempt to fix trailing commas or incomplete JSON by finding the last valid string
-                raw_list = match.group(0)
-                if not raw_list.endswith(']'): raw_list += '"]'
-                # Fallback, just split by quote
-                strings = re.findall(r'"([^"]*)"', raw_list)
-                return [s for s in strings if len(s) > 10]
-        else:
-            # Fallback regex if no bracket found
-            strings = re.findall(r'"([^"]*)"', content)
-            return [s for s in strings if len(s) > 10]
+                citations = json.loads(match.group(0))
+                if isinstance(citations, list) and len(citations) > 0:
+                    return citations[:25]
+            except:
+                pass
+                
+        # 2. Try quote extraction
+        strings = re.findall(r'"([^"]{20,})"', content)
+        if strings:
+            return strings[:25]
+            
+        # 3. Try line-by-line fallback
+        lines = [line.strip() for line in content.split('\n') if len(line.strip()) > 20]
+        # Filter out lines that look like conversational AI filler
+        lines = [l for l in lines if not l.lower().startswith("here are") and not l.lower().startswith("i have extracted")]
+        if lines:
+            return lines[:25]
+            
+        return []
             
     except Exception as e:
         print(f"Extraction error: {e}")
