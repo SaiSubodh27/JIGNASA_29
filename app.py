@@ -110,7 +110,7 @@ with st.sidebar:
 # ── Main Area ─────────────────────────────────────────────────────────────────
 st.title("⚖️ Research Ethics Guidance Assistant")
 
-tab1, tab2 = st.tabs(["💬 Q&A Assistant", "📄 Comprehensive Paper Audit"])
+tab1, tab2 = st.tabs(["💬 Q&A Assistant", "🤖 Automated Reference & Ethics Audit"])
 
 with tab1:
     st.markdown(
@@ -241,8 +241,8 @@ with tab1:
             )
 
 with tab2:
-    st.markdown("### 📝 Comprehensive Paper Audit")
-    st.markdown("Upload your Main Paper to verify it against general ethics guidelines, manually check against a Base Paper, and automatically audit references globally.")
+    st.markdown("### 🤖 Fully Automated Ethics & Reference Audit")
+    st.markdown("Upload your Main Paper. The system will automatically extract its references, fetch them globally via OpenAlex, and audit your paper against **BOTH** the official ethical guidelines and the fetched reference abstracts.")
     
     main_file = st.file_uploader("Upload MAIN Paper (Your study)", type=["pdf", "docx", "doc"])
     
@@ -255,78 +255,18 @@ with tab2:
         main_sec = st.session_state["main_sections"]
         
         st.markdown("---")
-        st.markdown("#### Step 1: Guideline & Base Paper Audit")
         
         sel_main = st.selectbox("Select section from MAIN Paper to audit:", list(main_sec.keys()), key="sel_main")
         paper_input = main_sec[sel_main]
         with st.expander(f"Preview Main: {sel_main}"):
             st.write(paper_input[:500] + "...")
-            
-        base_file = st.file_uploader("Upload BASE Paper (Reference study, Optional)", type=["pdf", "docx", "doc"])
-        base_input = ""
-        if base_file:
-            if "base_sections" not in st.session_state or st.session_state.get("last_base") != base_file.name:
-                st.session_state["base_sections"] = parse_scientific_paper(base_file.read(), base_file.name)
-                st.session_state["last_base"] = base_file.name
-            base_sec = st.session_state["base_sections"]
-            sel_base = st.selectbox("Select section from BASE Paper to cross-reference:", list(base_sec.keys()), key="sel_base")
-            base_input = base_sec[sel_base]
-            with st.expander(f"Preview Base: {sel_base}"):
-                st.write(base_input[:500] + "...")
                 
-        audit_btn = st.button("Run Ethics Audit", type="primary")
-        if audit_btn and paper_input.strip():
-            with st.spinner("Auditing against ethics guidelines..."):
-                from pipeline import run_audit_pipeline
-                audit_result = run_audit_pipeline(paper_input, base_paper_text=base_input, top_k=top_k, retrieval_mode=retrieval_mode)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.success("✅ Compliant Areas")
-                    if audit_result.get("compliant"):
-                        for item in audit_result["compliant"]:
-                            st.markdown(f"- {item}")
-                    else:
-                        st.write("None identified.")
-                with col2:
-                    st.error("🚨 Potential Red Flags")
-                    if audit_result.get("red_flags"):
-                        for item in audit_result["red_flags"]:
-                            st.markdown(f"- {item}")
-                    else:
-                        st.write("No direct violations found.")
-                        
-                st.warning("⚠️ Missing Information")
-                if audit_result.get("missing_info"):
-                    for item in audit_result["missing_info"]:
-                        st.markdown(f"- {item}")
-                else:
-                    st.write("None identified.")
-                    
-                st.info(f"**Disclaimer:** {audit_result.get('disclaimer', 'This is an automated audit.')}")
-                
-        st.markdown("---")
-        st.markdown("#### 💬 Ask the Auditor")
-        followup_q = st.text_input("Follow-up question:", placeholder="e.g., Did I properly cite the dataset?")
-        ask_btn = st.button("Ask Question", type="secondary")
-        if ask_btn and followup_q.strip():
-            with st.spinner("Consulting the ethics guidelines..."):
-                from pipeline import run_audit_chat
-                answer = run_audit_chat(followup_q, paper_input, base_paper_text=base_input, top_k=top_k, retrieval_mode=retrieval_mode)
-                st.info(answer)
-                
-        st.markdown("---")
-        st.markdown("#### Step 2: Auto-Reference Global Audit")
-        st.markdown("Automatically extract references from your uploaded paper and resolve them globally via the OpenAlex API to verify citation accuracy.")
-        
-        if st.button("Run Auto-Reference Audit"):
-            with st.spinner("Extracting References..."):
+        if st.button("Run Automated Audit", type="primary"):
+            with st.spinner("Extracting References from document..."):
                 ref_text = ""
                 for k, v in main_sec.items():
                     if "reference" in k.lower() or "bibliography" in k.lower():
                         ref_text += v + "\n"
-                
-                main_text_for_audit = "\n".join([v for k, v in main_sec.items() if "reference" not in k.lower()])
             
             if not ref_text:
                 st.error("Could not find a 'References' section in this document.")
@@ -335,16 +275,18 @@ with tab2:
                     import sys
                     if 'src' not in sys.path:
                         sys.path.insert(0, 'src')
-                    from src.auto_reference import generate_reference_extraction, fetch_paper_info, generate_reference_audit
+                    from src.auto_reference import generate_reference_extraction, fetch_paper_info
+                    from pipeline import run_audit_pipeline
                     citations = generate_reference_extraction(ref_text)
                     
                 if not citations:
                     st.warning("No specific citations could be parsed.")
                 else:
-                    st.success(f"Found {len(citations)} citations. Checking globally...")
-                    for cite in citations:
+                    st.success(f"Found {len(citations)} citations. Running global audit...")
+                    for i, cite in enumerate(citations):
                         st.markdown("---")
-                        st.markdown(f"**Extracted Citation:** `{cite}`")
+                        st.markdown(f"### Reference {i+1}: `{cite}`")
+                        
                         with st.spinner("Querying OpenAlex global database..."):
                             paper_data = fetch_paper_info(cite)
                         
@@ -352,12 +294,36 @@ with tab2:
                             st.error("❌ Could not resolve this paper globally.")
                             continue
                             
-                        st.markdown(f"### 📄 {paper_data['title']}")
                         if paper_data['is_oa']:
-                            st.markdown("🟢 **Status: OPEN ACCESS** - *Auditing citation accuracy...*")
+                            st.markdown(f"**📄 Title:** {paper_data['title']} (🟢 OPEN ACCESS)")
                         else:
-                            st.markdown("🔒 **Status: PAYWALLED** - *Auditing against abstract only...*")
+                            st.markdown(f"**📄 Title:** {paper_data['title']} (🔒 PAYWALLED - Using Abstract)")
                             
-                        with st.spinner("Analyzing relationship..."):
-                            audit_result = generate_reference_audit(main_text_for_audit, paper_data['title'], paper_data['abstract'])
-                            st.info(audit_result)
+                        with st.spinner("Running Ethics & Citation Audit..."):
+                            # We pass the fetched abstract as the base_paper_text
+                            audit_result = run_audit_pipeline(paper_input, base_paper_text=paper_data['abstract'], top_k=top_k, retrieval_mode=retrieval_mode)
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.success("✅ Compliant Areas")
+                                if audit_result.get("compliant"):
+                                    for item in audit_result["compliant"]:
+                                        st.markdown(f"- {item}")
+                                else:
+                                    st.write("None identified.")
+                            with col2:
+                                st.error("🚨 Potential Red Flags")
+                                if audit_result.get("red_flags"):
+                                    for item in audit_result["red_flags"]:
+                                        st.markdown(f"- {item}")
+                                else:
+                                    st.write("No direct violations found.")
+                                    
+                            st.warning("⚠️ Missing Information")
+                            if audit_result.get("missing_info"):
+                                for item in audit_result["missing_info"]:
+                                    st.markdown(f"- {item}")
+                            else:
+                                st.write("None identified.")
+                            
+                            st.info(f"**Disclaimer:** {audit_result.get('disclaimer', 'This is an automated audit.')}")
