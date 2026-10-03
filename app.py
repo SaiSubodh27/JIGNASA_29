@@ -308,6 +308,24 @@ with tab2:
                     st.write("None identified.")
                     
                 st.info(f"**Disclaimer:** {audit_result.get('disclaimer', 'This is an automated audit.')}")
+                
+                # Format report for download
+                report_lines = ["RESEARCH ETHICS AUDIT REPORT\n" + "="*30 + "\n"]
+                report_lines.append(f"SECTION AUDITED: {sel_main}\n")
+                if base_input:
+                    report_lines.append(f"BASE PAPER CROSS-REFERENCE: {sel_base}\n")
+                
+                report_lines.append("\n[ COMPLIANT AREAS ]")
+                for i in audit_result.get("compliant", []): report_lines.append(f"- {i}")
+                
+                report_lines.append("\n[ RED FLAGS ]")
+                for i in audit_result.get("red_flags", []): report_lines.append(f"- {i}")
+                
+                report_lines.append("\n[ MISSING INFO ]")
+                for i in audit_result.get("missing_info", []): report_lines.append(f"- {i}")
+                
+                report_text = "\n".join(report_lines)
+                st.download_button(label="📥 Download Audit Report", data=report_text, file_name="Ethics_Audit_Report.txt", mime="text/plain")
 
         st.markdown("---")
         st.markdown("### 💬 Ask the Auditor")

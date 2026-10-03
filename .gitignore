@@ -11,3 +11,9 @@ dist/
 build/
 .venv/
 venv/
+scratch/
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

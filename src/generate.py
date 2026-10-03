@@ -193,10 +193,11 @@ Output JSON format:
 }
 """
 
-def generate_audit(paper_text: str, chunks: list[dict]) -> dict:
+def generate_audit(paper_text: str, base_paper_text: str, chunks: list[dict]) -> dict:
     sources_text = _build_sources(chunks)
-    safe_paper = paper_text[:3000] + ("..." if len(paper_text) > 3000 else "")
-    user_content = f"USER PAPER:\n{safe_paper}\n\nSOURCES:\n{sources_text}"
+    safe_paper = paper_text[:2000] + ("..." if len(paper_text) > 2000 else "")
+    safe_base = base_paper_text[:2000] + ("..." if len(base_paper_text) > 2000 else "") if base_paper_text else "None provided."
+    user_content = f"MAIN PAPER:\n{safe_paper}\n\nBASE PAPER:\n{safe_base}\n\nSOURCES:\n{sources_text}"
     
     try:
         import json
@@ -228,12 +229,11 @@ def generate_audit_chat(question: str, paper_text: str, base_paper_text: str, ch
     safe_base = base_paper_text[:2000] if base_paper_text else "None" 
     
     sys_prompt = (
-        "You are a Research Ethics Auditor. You are answering a follow-up question "
-        "about the user's research paper. \n"
-        "1. ONLY use the OFFICIAL GUIDELINES provided.\n"
-        "2. Cite your sources using [1].\n"
-        "3. You are allowed to give case-specific advice here because this is the Audit Mode.\n"
-        "4. If the guidelines don't have the answer, say NOT_FOUND."
+        "You are a Research Ethics Auditor answering a follow-up question.\n"
+        "1. Apply the principles from the OFFICIAL GUIDELINES to the specific situation described in the MAIN PAPER and BASE PAPER.\n"
+        "2. It is completely OK if the guidelines do not explicitly mention the user's specific dataset or algorithm names. You MUST apply the general rules (like plagiarism, consent, or citation) to their specific scenario.\n"
+        "3. Cite the guidelines using [1].\n"
+        "4. Only say NOT_FOUND if the guidelines are entirely irrelevant to the core ethical question."
     )
     
     user_msg = f"MAIN PAPER:\n{safe_paper}\n\nBASE PAPER:\n{safe_base}\n\nOFFICIAL GUIDELINES:\n{sources_text}\n\nUSER QUESTION:\n{question}"
