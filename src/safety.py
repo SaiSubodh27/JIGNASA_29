@@ -42,6 +42,10 @@ _MISCONDUCT_PATTERNS = [
     r"my\s+(supervisor|advisor|pi|professor)\s+.{0,60}(author|credit|data)",
     r"forced\s+me\s+to",
     r"steal(ing)?\s+(my|the)\s+(work|data|credit)",
+    r"putting\s+(his|her|their)\s+name\s+on",
+    r"(add|added|adding)\s+(him|her|them)sel(f|ves)\s+as\s+author",
+    r"name\s+on\s+my\s+paper\s+without\s+contribut",
+    r"without\s+contribut\w+.{0,40}(author|paper|manuscript)",
 ]
 
 _VULNERABLE_PATTERNS = [

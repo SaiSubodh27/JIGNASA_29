@@ -20,7 +20,7 @@ PRIMARY_MODEL = "qwen/qwen3.8-27b"       # Good TPM limit, strong reasoning
 FALLBACK_MODEL = "openai/gpt-oss-20b"    # Smaller fallback
 
 # Max chars per source chunk to keep prompts within token limits
-MAX_SOURCE_CHARS = 600
+MAX_SOURCE_CHARS = 2000
 
 # ── Initialise client ─────────────────────────────────────────────────────────
 _api_key = os.getenv("GROQ_API_KEY")

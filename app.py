@@ -229,7 +229,7 @@ with tab1:
     Section: {src.get('section', 'N/A')} · 
     Topics: {', '.join(src.get('all_topics', [src.get('topic', 'general')]))}</small>
     <br/><br/>
-    <em>{src['text'][:600]}{'...' if len(src['text']) > 600 else ''}</em>
+    <em>{src['text'][:2000]}{'...' if len(src['text']) > 2000 else ''}</em>
     </div>
     ''',
                     unsafe_allow_html=True,
