@@ -38,5 +38,15 @@
     "file": "data/raw/icmr_2017.pdf",
     "url": "https://main.icmr.nic.in/sites/default/files/guidelines/ICMR_Ethical_Guidelines_2017.pdf",
     "topic_areas": ["consent", "data_handling"]
+  },
+  {
+    "doc_id": "acm_ethics_2018",
+    "title": "ACM Code of Ethics and Professional Conduct",
+    "publisher": "Association for Computing Machinery",
+    "version": "2018",
+    "authority": 3,
+    "file": "data/raw/acm_code_of_ethics.pdf",
+    "url": "https://www.acm.org/code-of-ethics",
+    "topic_areas": ["computer_science", "intellectual_property", "data_handling"]
   }
 ]
