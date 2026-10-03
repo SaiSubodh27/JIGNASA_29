@@ -110,7 +110,7 @@ with st.sidebar:
 # ── Main Area ─────────────────────────────────────────────────────────────────
 st.title("⚖️ Research Ethics Guidance Assistant")
 
-tab1, tab2 = st.tabs(["💬 Q&A Assistant", "📄 Automated Ethics Audit"])
+tab1, tab2, tab3 = st.tabs(["💬 Q&A Assistant", "📄 Dual-Paper Audit", "🔗 Auto-Reference Audit"])
 
 with tab1:
     st.markdown(
@@ -339,3 +339,57 @@ with tab2:
                 from pipeline import run_audit_chat
                 answer = run_audit_chat(followup_q, paper_input, base_paper_text=base_input, top_k=top_k, retrieval_mode=retrieval_mode)
                 st.info(answer)
+
+
+with tab3:
+    st.markdown("### 🔗 Auto-Reference Audit Engine (OpenAlex API)")
+    st.markdown("Automatically extract references from your paper, resolve them globally, and check how accurately you cited them.")
+    
+    main_file_auto = st.file_uploader("Upload MAIN Paper (PDF)", type=["pdf"], key="auto_ref")
+    if main_file_auto and st.button("Run Auto-Reference Audit"):
+        with st.spinner("Parsing PDF..."):
+            from src.user_parser import parse_scientific_paper
+            sections = parse_scientific_paper(main_file_auto.read())
+            
+            # Find references
+            ref_text = ""
+            for k, v in sections.items():
+                if "reference" in k.lower() or "bibliography" in k.lower():
+                    ref_text += v + "\n"
+            
+            # Grab introduction/methodology context
+            main_text_for_audit = "\n".join([v for k, v in sections.items() if "reference" not in k.lower()])
+            
+        if not ref_text:
+            st.error("Could not find a 'References' section in this PDF.")
+        else:
+            with st.spinner("Extracting top citations via LLM..."):
+                import sys
+                if 'src' not in sys.path:
+                    sys.path.insert(0, 'src')
+                from src.auto_reference import generate_reference_extraction, fetch_paper_info, generate_reference_audit
+                citations = generate_reference_extraction(ref_text)
+                
+            if not citations:
+                st.warning("No specific citations could be parsed.")
+            else:
+                st.success(f"Found {len(citations)} citations. Checking globally...")
+                for cite in citations:
+                    st.markdown("---")
+                    st.markdown(f"**Extracted Citation:** `{cite}`")
+                    with st.spinner("Querying OpenAlex global database..."):
+                        paper_data = fetch_paper_info(cite)
+                    
+                    if not paper_data:
+                        st.error("❌ Could not resolve this paper globally.")
+                        continue
+                        
+                    st.markdown(f"### 📄 {paper_data['title']}")
+                    if paper_data['is_oa']:
+                        st.markdown("🟢 **Status: OPEN ACCESS** - *Auditing citation accuracy...*")
+                    else:
+                        st.markdown("🔒 **Status: PAYWALLED** - *Auditing against abstract only...*")
+                        
+                    with st.spinner("Analyzing relationship..."):
+                        audit_result = generate_reference_audit(main_text_for_audit, paper_data['title'], paper_data['abstract'])
+                        st.info(audit_result)
