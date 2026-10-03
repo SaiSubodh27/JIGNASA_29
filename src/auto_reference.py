@@ -1,4 +1,5 @@
 import json
+import re
 
 def generate_reference_extraction(references_text: str) -> list:
     sys_prompt = "Extract ALL individual citation strings from the following references section. Return ONLY a JSON list of strings (e.g. [\"citation 1\", \"citation 2\"]). Do not add markdown blocks or limits."
@@ -8,16 +9,29 @@ def generate_reference_extraction(references_text: str) -> list:
             model=FALLBACK_MODEL,
             messages=[
                 {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": references_text[:3000]}
+                {"role": "user", "content": references_text[:6000]} # increased input context
             ],
             temperature=0.0
         )
         content = response.choices[0].message.content.strip()
-        if content.startswith("```json"):
-            content = content[7:-3].strip()
-        elif content.startswith("```"):
-            content = content[3:-3].strip()
-        return json.loads(content)
+        
+        # Robust JSON extraction
+        match = re.search(r'\[.*\]', content, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                # Attempt to fix trailing commas or incomplete JSON by finding the last valid string
+                raw_list = match.group(0)
+                if not raw_list.endswith(']'): raw_list += '"]'
+                # Fallback, just split by quote
+                strings = re.findall(r'"([^"]*)"', raw_list)
+                return [s for s in strings if len(s) > 10]
+        else:
+            # Fallback regex if no bracket found
+            strings = re.findall(r'"([^"]*)"', content)
+            return [s for s in strings if len(s) > 10]
+            
     except Exception as e:
         print(f"Extraction error: {e}")
         return []
@@ -26,8 +40,10 @@ def generate_reference_audit(main_text: str, ref_title: str, ref_abstract: str) 
     sys_prompt = (
         "You are a Citation Verification AI.\n"
         "You are given an excerpt from a MAIN PAPER and the Title/Abstract of a REFERENCE PAPER cited within it.\n"
-        "Analyze the relationship: How does the Main Paper seem to use this reference? Does it build upon it, compare against it, or use its methodology?\n"
-        "Keep your response concise (3-4 sentences). Focus strictly on the academic relationship."
+        "1. Check for RED FLAGS: Does the main paper misrepresent or misuse this reference?\n"
+        "2. If there's a red flag, briefly state WHAT TO FIX.\n"
+        "3. If compliant, state '✅ Compliant' and briefly say why.\n"
+        "Keep it strictly under 3 sentences. Be extremely concise and direct."
     )
     user_msg = f"MAIN PAPER EXCERPT:\n{main_text[:2000]}\n\nREFERENCE PAPER ({ref_title}):\nABSTRACT:\n{ref_abstract}"
     
