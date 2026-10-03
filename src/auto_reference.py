@@ -35,15 +35,22 @@ def generate_reference_extraction(references_text: str) -> list:
         return []
 
 def generate_reference_audit(main_text: str, ref_title: str, ref_abstract: str) -> str:
+    if not ref_abstract or ref_abstract.strip().lower() == "no abstract available.":
+        return "⚠️ INCONCLUSIVE: The global database did not provide an abstract for this paper. Cannot automatically verify claims."
+
     sys_prompt = (
-        "You are a Citation Verification AI.\n"
+        "You are an expert Academic Integrity AI.\n"
         "You are given an excerpt from a MAIN PAPER and the Title/Abstract of a REFERENCE PAPER cited within it.\n"
-        "1. Check for RED FLAGS: Does the main paper misrepresent or misuse this reference?\n"
-        "2. If there's a red flag, you MUST start your response with '🔴 RED FLAG: ' and state WHAT TO FIX.\n"
-        "3. If compliant, you MUST start with '✅ COMPLIANT: ' and briefly say why.\n"
-        "Keep it strictly under 3 sentences. Be extremely concise."
+        "Your task is to ensure the MAIN PAPER does not misrepresent the REFERENCE PAPER.\n\n"
+        "INSTRUCTIONS:\n"
+        "1. Identify what the MAIN PAPER specifically claims about the REFERENCE PAPER.\n"
+        "2. Cross-reference that claim strictly against the REFERENCE ABSTRACT.\n"
+        "3. If the abstract contradicts the claim, or the claim is a massive overstatement, it is a RED FLAG.\n\n"
+        "OUTPUT FORMAT (Choose one, keep strictly under 3 sentences):\n"
+        "- If the claim is unsupported/misrepresented: '🔴 RED FLAG: [Explain the mismatch]. TO FIX: [How they should rephrase it]'\n"
+        "- If valid or un-verifiable from abstract alone but seems reasonable: '✅ COMPLIANT: [Briefly state how the abstract supports the context]'"
     )
-    user_msg = f"MAIN PAPER EXCERPT:\n{main_text[:2000]}\n\nREFERENCE PAPER ({ref_title}):\nABSTRACT:\n{ref_abstract}"
+    user_msg = f"MAIN PAPER EXCERPT:\n{main_text[:3000]}\n\nREFERENCE PAPER ({ref_title}):\nABSTRACT:\n{ref_abstract}"
     
     try:
         from src.generate import client, PRIMARY_MODEL
