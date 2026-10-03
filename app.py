@@ -310,8 +310,15 @@ with tab2:
                             "Audit Analysis": audit_summary
                         })
                     
-                    st.markdown("### 📊 Final Audit Results")
-                    st.table(results)
+                                          st.markdown("### 📊 Final Audit Results")
+                      
+                      for i, res in enumerate(results):
+                          color = "🟢" if "OA" in res['Access'] else "🔒" if "Paywalled" in res['Access'] else "❌"
+                          with st.expander(f"{i+1}. {res['Resolved Title']} {color}"):
+                              st.markdown(f"**Original Citation:** _{res['Citation']}_")
+                              st.markdown("---")
+                              st.markdown(f"{res['Audit Analysis']}")
+
                     
                     # Also allow downloading as CSV
                     import pandas as pd

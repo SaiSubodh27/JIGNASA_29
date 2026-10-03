@@ -2,33 +2,37 @@ import json
 import re
 
 def generate_reference_extraction(references_text: str) -> list:
-    import re
-    lines = references_text.split('\n')
-    citations = []
-    current_cit = ""
-    pattern = re.compile(r'^(\[\d+\]|\(\d+\)|\d+\.)')
-    
-    for line in lines:
-        line = line.strip()
-        if not line: continue
-        if pattern.match(line):
-            if current_cit:
-                citations.append(current_cit)
-            current_cit = line
-        else:
-            if current_cit:
-                current_cit += " " + line
-            elif len(line) > 40:
-                citations.append(line)
+    sys_prompt = (
+        "Extract exactly the FIRST 25 citations from the provided references text. "
+        "Output them as a simple list with one citation per line. "
+        "Do not include any intro, outro, markdown formatting, or JSON."
+    )
+    try:
+        from src.generate import client, FALLBACK_MODEL
+        response = client.chat.completions.create(
+            model=FALLBACK_MODEL,
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": references_text[:10000]}
+            ],
+            temperature=0.0
+        )
+        content = response.choices[0].message.content.strip()
+        
+        import re
+        citations = []
+        for line in content.split('\n'):
+            line = line.strip()
+            if not line: continue
+            # Remove leading numbers/bullets (e.g. '1.', '[1]', '-', '*')
+            clean_line = re.sub(r'^(\d+\.|\[\d+\]|\(\d+\)|-|\*)\s*', '', line)
+            if len(clean_line) > 20:
+                citations.append(clean_line)
                 
-    if current_cit:
-        citations.append(current_cit)
-        
-    if len(citations) < 5:
-        citations = [l.strip() for l in lines if len(l.strip()) > 40]
-        
-    # Return exactly 25 to avoid overwhelming the API
-    return citations[:25]
+        return citations[:25]
+    except Exception as e:
+        print(f"Extraction error: {e}")
+        return []
 
 def generate_reference_audit(main_text: str, ref_title: str, ref_abstract: str) -> str:
     sys_prompt = (
